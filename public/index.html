@@ -1,0 +1,32 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <title>research</title>
+    </head>
+    <body>
+        <button id="start">開始</button>
+        <video id="video" width="320" height="180" autoplay muted playsinline></video>
+        <canvas id="canvas" width="320" height="180"></canvas>
+        <script>
+            document.querySelector('#start').addEventListener('click', function () {
+                var video = document.getElementById('video');
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({video: { width: 1280, height: 720 }}).then(function (stream) {
+                        console.log(stream)
+                        video.srcObject = stream;
+                        video.play();
+                    });
+                } else {
+                    alert('no video device')
+                }
+                var canvas = document.getElementById('canvas');
+                var context = canvas.getContext('2d');
+                video.addEventListener('timeupdate', () => {
+                    console.log("test")
+                    context.drawImage(video, 0, 0, 320, 180);
+                })
+            })
+        </script>
+    </body>
+</html>

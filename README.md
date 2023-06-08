@@ -15,6 +15,8 @@ npm install websocket
 
 ### GCP への配置
 
++ [このあたり](https://cloud.google.com/appengine/docs/standard/nodejs/building-app/creating-project?hl=ja)を参考に
+
 + プロジェクトを登録。
 https://console.cloud.google.com/
 

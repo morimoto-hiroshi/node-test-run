@@ -14,6 +14,7 @@ const DATA_DIR = '.data' //データ保存ディレクトリ
 
 //httpサーバーのrequestハンドラ
 const g_httpServer = http.createServer((request, response) => {
+    //url検査
     var url = request.url
     if (url == '/') {
         url = '/index.html'
@@ -23,11 +24,25 @@ const g_httpServer = http.createServer((request, response) => {
         response.end()
         return;
     }
+    //api応答処理
+    if (url.match('^/api/.+$') != null) {
+        switch (request.method) {
+            case 'GET':
+                break
+            case 'POST':
+                break
+        }
+        response.writeHead(403)
+        response.end()
+        return;
+    }
+    //ファイル応答処理
     const patterns = [
         '^/.+\\.html$',
         '^/css/.+\\.css$',
         '^/js/.+\\.js$',
-        '^/img/.+\\.(ico|png|jpg|gif)$'
+        '^/img/.+\\.(ico|png|jpg|gif)$',
+        '^/audio/.+\\.(mp3)$'
     ];
     if (patterns.filter(pat => url.match(pat)).length <= 0) {
         response.writeHead(404)
@@ -41,7 +56,8 @@ const g_httpServer = http.createServer((request, response) => {
         '.ico': 'image/vnd.microsoft.icon',
         '.png': 'image/png',
         '.jpg': 'image/jpeg',
-        '.gif': 'image/gif'
+        '.gif': 'image/gif',
+        '.mp3': 'audio/mpeg'
     }
     const headers = {}
     const ext = path.extname(url)

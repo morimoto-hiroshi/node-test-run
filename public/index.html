@@ -2,31 +2,53 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-        <title>research</title>
+        <meta name="title" content="node-test-run" />
+        <meta name="description" content="ブラウザからカメラやGPSなどを使うテスト" />
+        <title>node-test-run</title>
+        <link rel="icon" href="/img/favicon.ico">
+        <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+        <link rel="stylesheet" type="text/css" href="/css/camera.css">
+        <script src="/js/camera.js"></script>
+        <script>
+            window.onload = () => {
+                document.querySelector('#camera-run').addEventListener('click', () => {
+                    const myCamera = new MyCamera();
+                    myCamera.start((dataUrl) => {
+                        const base64 = dataUrl.replace(/^.*,/, '');
+                        const bin = atob(base64);
+                        const buffer = new Uint8Array(bin.length);
+                        for (var i = 0; i < bin.length; i++) {
+                            buffer[i] = bin.charCodeAt(i);
+                        }
+                        const xhr = new XMLHttpRequest();
+                        xhr.open("POST", '/api/image', false);
+                        xhr.addEventListener('progress', (event) => {
+                            console.log(event);
+                        });
+                        xhr.send(buffer);
+                    });
+                });
+            }
+        </script>
     </head>
     <body>
-        <button id="start">開始</button>
-        <video id="video" width="320" height="180" autoplay muted playsinline></video>
-        <canvas id="canvas" width="320" height="180"></canvas>
-        <script>
-            document.querySelector('#start').addEventListener('click', function () {
-                var video = document.getElementById('video');
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    navigator.mediaDevices.getUserMedia({video: { width: 1280, height: 720 }}).then(function (stream) {
-                        console.log(stream)
-                        video.srcObject = stream;
-                        video.play();
-                    });
-                } else {
-                    alert('no video device')
-                }
-                var canvas = document.getElementById('canvas');
-                var context = canvas.getContext('2d');
-                video.addEventListener('timeupdate', () => {
-                    console.log("test")
-                    context.drawImage(video, 0, 0, 320, 180);
-                })
-            })
-        </script>
+        <h1>ブラウザからカメラやGPSなどを使うテスト</h1>
+        <section>
+            <h2>カメラ</h2>
+            <button id="camera-run">カメラ実行</button>
+            <div id="camera-result"></div>
+            <div><a href="https://otologic.jp" target="_blank">BGM by OtoLogic(CC BY 4.0)</a></div>
+        </section>
+        <section>
+            <h2>GPS</h2>
+            <button id="gps-run">GPS実行</button>
+            <div id="gps-result"></div>
+            <div><a href="https://www.flaticon.com/free-icons/radar" target="_blank">Radar icons created by Freepik - Flaticon</a></div>
+        </section>
+        <section>
+            <h2>QRコード</h2>
+            <button id="qrcode-run">QRコード実行</button>
+            <div id="qrcode-result"></div>
+        </section>
     </body>
 </html>

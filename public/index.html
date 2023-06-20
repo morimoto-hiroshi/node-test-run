@@ -11,23 +11,51 @@
         <script src="/js/camera.js"></script>
         <script>
             window.onload = () => {
-                document.querySelector('#camera-run').addEventListener('click', () => {
+                //カメラ実行ボタン
+                document.querySelector('#camera-run').onclick = () => {
                     const myCamera = new MyCamera();
                     myCamera.start((dataUrl) => {
                         const base64 = dataUrl.replace(/^.*,/, '');
-                        const bin = atob(base64);
-                        const buffer = new Uint8Array(bin.length);
-                        for (var i = 0; i < bin.length; i++) {
-                            buffer[i] = bin.charCodeAt(i);
+                        const bstr = atob(base64);
+                        const buf = new Uint8Array(bstr.length);
+                        for (var i = 0; i < bstr.length; i++) {
+                            buf[i] = bstr.charCodeAt(i);
                         }
                         const xhr = new XMLHttpRequest();
-                        xhr.open("POST", '/api/image', false);
-                        xhr.addEventListener('progress', (event) => {
-                            console.log(event);
-                        });
-                        xhr.send(buffer);
+                        xhr.onload = () => {
+                            location.reload();
+                        };
+                        xhr.open("POST", '/api/add-image', false);
+                        xhr.send(buf);
                     });
-                });
+                };
+
+                //保存済み画像の有無を検査
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', '/api/exist-image', true);
+                xhr.onload = () => {
+                    const result = JSON.parse(xhr.response);
+                    if (result.exists) {
+                        //保存済み画像があれば表示
+                        document.querySelector('#camera-result').insertAdjacentHTML('beforeend', `
+                            <img src="/api/get-image" style="max-width:320px"/>
+                            <button>削除</button>`);
+                        document.querySelector('#camera-result button').onclick = () => {
+                            deleteImage();
+                        };
+                    }
+                };
+                xhr.send(null);
+
+                //保存済み画像の削除ボタン
+                function deleteImage() {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/api/delete-image', true);
+                    xhr.onload = () => {
+                        location.reload();
+                    };
+                    xhr.send(null);
+                }
             }
         </script>
     </head>
@@ -37,18 +65,21 @@
             <h2>カメラ</h2>
             <button id="camera-run">カメラ実行</button>
             <div id="camera-result"></div>
-            <div><a href="https://otologic.jp" target="_blank">BGM by OtoLogic(CC BY 4.0)</a></div>
         </section>
         <section>
             <h2>GPS</h2>
             <button id="gps-run">GPS実行</button>
             <div id="gps-result"></div>
-            <div><a href="https://www.flaticon.com/free-icons/radar" target="_blank">Radar icons created by Freepik - Flaticon</a></div>
         </section>
         <section>
             <h2>QRコード</h2>
             <button id="qrcode-run">QRコード実行</button>
             <div id="qrcode-result"></div>
         </section>
+        <footer>
+            <h2></h2>
+            <div><a href="https://otologic.jp" target="_blank">BGM by OtoLogic(CC BY 4.0)</a></div>
+            <div><a href="https://www.flaticon.com/free-icons/radar" target="_blank">Radar icons created by Freepik - Flaticon</a></div>
+        </footer>
     </body>
 </html>

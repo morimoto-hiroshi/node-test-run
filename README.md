@@ -4,6 +4,8 @@
 
 + ブラウザのカメラは localhost または https でないと使えないので GCPに配置して使う。
 
++ GCS keyFileの取得は https://github.com/morimoto-hiroshi/node-gcs-cruds を参照。
+
 ## ローカルディレクトリの構築メモ
 
 ### node.js の設定
@@ -11,6 +13,7 @@
 ```
 npm init
 npm install websocket
+npm install @google-cloud/storage
 ```
 
 ### GCP への配置

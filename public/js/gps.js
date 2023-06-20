@@ -1,18 +1,18 @@
 //ロード時の初期化処理
 window.onload = function () {
-    document.querySelector('#start-button').addEventListener('click', function () {
+    document.querySelector('#start-button').onclick = function () {
         startCamera();
     });
-}
+};
 
-var options = {
+const options = {
     enableHighAccuracy: true,
     timeout: 5000,
     maximumAge: 0
 };
 
 function success(pos) {
-    var crd = pos.coords;
+    const crd = pos.coords;
 
     log('Your current position is:');
     log(`Latitude : ${crd.latitude}`);

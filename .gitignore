@@ -9,3 +9,6 @@ local.properties
 
 # data directory
 .data
+
+# credentials directory
+.keys

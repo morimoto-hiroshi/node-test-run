@@ -40,15 +40,15 @@ class MyCamera {
         this.m_doneBlock = doneBlock;
 
         //ボタンハンドラ設定
-        this.m_btnChange.addEventListener('click', () => {
+        this.m_btnChange.onclick = () => {
             this.onChange();
-        });
-        this.m_btnCapture.addEventListener('click', () => {
+        };
+        this.m_btnCapture.onclick = () => {
             this.onCapture();
-        });
-        this.m_btnCancel.addEventListener('click', () => {
+        };
+        this.m_btnCancel.onclick = () => {
             this.onCancel();
-        });
+        };
 
         //プレビュー開始
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -88,9 +88,9 @@ class MyCamera {
             const dispHeight = videoHeight * dispRatio;
             //videoとcanvasの表示サイズを設定する
             this.m_video.style.width = dispWidth + 'px';
-            this.m_video.style.height = dispHeight + 'px'
+            this.m_video.style.height = dispHeight + 'px';
             this.m_canvas.style.width = dispWidth + 'px';
-            this.m_canvas.style.height = dispHeight + 'px'
+            this.m_canvas.style.height = dispHeight + 'px';
             //videoとcanvasの論理サイズを合わせる
             this.m_canvas.width = videoWidth;
             this.m_canvas.height = videoHeight;
@@ -113,7 +113,7 @@ class MyCamera {
             //OKモード -> 終了
             if (this.m_doneBlock) {
                 const dataUrl = this.m_canvas.toDataURL('image/png');
-                this.m_doneBlock(dataUrl)
+                this.m_doneBlock(dataUrl);
             }
             document.querySelector('.my-camera').remove();
         } else {
@@ -121,7 +121,7 @@ class MyCamera {
             this.m_audio.play();
             //画面を video -> canvas に切り替え
             const context = this.m_canvas.getContext('2d');
-            context.drawImage(this.m_video, 0, 0, this.m_video.videoWidth, this.m_video.videoHeight)
+            context.drawImage(this.m_video, 0, 0, this.m_video.videoWidth, this.m_video.videoHeight);
             this.m_video.style.display = 'none';
             this.m_canvas.style.display = 'block';
             //OKモードに切り替え

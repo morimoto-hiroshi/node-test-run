@@ -11,7 +11,7 @@ class MyCamera {
     m_btnChange = null;
     m_btnCapture = null;
     m_btnCancel = null;
-    m_doneBlcok = null;
+    m_doneBlock = null;
 
     /**
      * 撮影開始
@@ -41,18 +41,18 @@ class MyCamera {
 
         //ボタンハンドラ設定
         this.m_btnChange.onclick = () => {
-            this.onChange();
+            this._onChange();
         };
         this.m_btnCapture.onclick = () => {
-            this.onCapture();
+            this._onCapture();
         };
         this.m_btnCancel.onclick = () => {
-            this.onCancel();
+            this._onCancel();
         };
 
         //プレビュー開始
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            this.setupCameraStream();
+            this._setupCameraStream();
         } else {
             alert('カメラが見つかりません')
         }
@@ -61,7 +61,7 @@ class MyCamera {
     /**
      * カメラからvideoエレメントへのストリーミングを設定する
      */
-    setupCameraStream() {
+    _setupCameraStream() {
         const param = {
             audio: false,
             video: {
@@ -100,15 +100,15 @@ class MyCamera {
     /**
      * 前／後ボタン押下
      */
-    onChange() {
+    _onChange() {
         this.m_envCamera = !this.m_envCamera;
-        this.setupCameraStream();
+        this._setupCameraStream();
     }
 
     /**
      * 撮影／OKボタン押下
      */
-    onCapture() {
+    _onCapture() {
         if (this.m_confirmMode) {
             //OKモード -> 終了
             if (this.m_doneBlock) {
@@ -134,7 +134,7 @@ class MyCamera {
     /**
      * キャンセルボタン押下
      */
-    onCancel() {
+    _onCancel() {
         if (this.m_confirmMode) {
             //OKモードの場合
             //画面を canvas -> video に切り替え

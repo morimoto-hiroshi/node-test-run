@@ -8,76 +8,28 @@
         <link rel="icon" href="/img/favicon.ico">
         <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
         <link rel="stylesheet" type="text/css" href="/css/camera.css">
+        <script src="/js/index.js"></script>
         <script src="/js/camera.js"></script>
-        <script>
-            window.onload = () => {
-                //カメラ実行ボタン
-                document.querySelector('#camera-run').onclick = () => {
-                    const myCamera = new MyCamera();
-                    myCamera.start((dataUrl) => {
-                        const base64 = dataUrl.replace(/^.*,/, '');
-                        const bstr = atob(base64);
-                        const buf = new Uint8Array(bstr.length);
-                        for (var i = 0; i < bstr.length; i++) {
-                            buf[i] = bstr.charCodeAt(i);
-                        }
-                        const xhr = new XMLHttpRequest();
-                        xhr.onload = () => {
-                            location.reload();
-                        };
-                        xhr.open("POST", '/api/add-image', false);
-                        xhr.send(buf);
-                    });
-                };
-
-                //保存済み画像の有無を検査
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', '/api/exist-image', true);
-                xhr.onload = () => {
-                    const result = JSON.parse(xhr.response);
-                    if (result.exists) {
-                        //保存済み画像があれば表示
-                        document.querySelector('#camera-result').insertAdjacentHTML('beforeend', `
-                            <img src="/api/get-image" style="max-width:320px"/>
-                            <button>削除</button>`);
-                        document.querySelector('#camera-result button').onclick = () => {
-                            deleteImage();
-                        };
-                    }
-                };
-                xhr.send(null);
-
-                //保存済み画像の削除ボタン
-                function deleteImage() {
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('POST', '/api/delete-image', true);
-                    xhr.onload = () => {
-                        location.reload();
-                    };
-                    xhr.send(null);
-                }
-            }
-        </script>
+        <script src="/js/gps.js"></script>
     </head>
     <body>
         <h1>ブラウザからカメラやGPSなどを使うテスト</h1>
         <section>
             <h2>カメラ</h2>
-            <button id="camera-run">カメラ実行</button>
+            <button id="camera-button">カメラ実行</button>
             <div id="camera-result"></div>
         </section>
         <section>
             <h2>GPS</h2>
-            <button id="gps-run">GPS実行</button>
+            <button id="gps-button">GPS実行</button>
             <div id="gps-result"></div>
         </section>
         <section>
             <h2>QRコード</h2>
-            <button id="qrcode-run">QRコード実行</button>
+            <button id="qrcode-button">QRコード実行</button>
             <div id="qrcode-result"></div>
         </section>
         <footer>
-            <h2></h2>
             <div><a href="https://otologic.jp" target="_blank">BGM by OtoLogic(CC BY 4.0)</a></div>
             <div><a href="https://www.flaticon.com/free-icons/radar" target="_blank">Radar icons created by Freepik - Flaticon</a></div>
         </footer>

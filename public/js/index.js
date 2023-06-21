@@ -75,5 +75,49 @@ function onGpsButton() {
 
 //QRコード実行ボタン
 function onQrcodeButton() {
+    const resultDiv = document.querySelector('#qrcode-result');
+    resultDiv.innerHTML = `<canvas style="width:320px;height:240px"></canvas><div></div>`;
+    var video = document.createElement("video");
+    var canvasElement = resultDiv.querySelector('canvas');
+    var canvas = canvasElement.getContext("2d");
+    var outputDiv = resultDiv.querySelector('div');
 
+    function drawLine(begin, end, color) {
+        canvas.beginPath();
+        canvas.moveTo(begin.x, begin.y);
+        canvas.lineTo(end.x, end.y);
+        canvas.lineWidth = 4;
+        canvas.strokeStyle = color;
+        canvas.stroke();
+    }
+
+    // Use facingMode: environment to attemt to get the front camera on phones
+    navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}}).then(function (stream) {
+        video.srcObject = stream;
+        video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
+        video.play();
+        requestAnimationFrame(tick);
+    });
+
+    function tick() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvasElement.height = video.videoHeight;
+            canvasElement.width = video.videoWidth;
+            canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+            var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            var code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert",
+            });
+            if (code) {
+                drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#FF3B58");
+                drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#FF3B58");
+                drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#FF3B58");
+                drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF3B58");
+                outputDiv.innerText = code.data;
+            } else {
+                outputDiv.innerText = '';
+            }
+        }
+        requestAnimationFrame(tick);
+    }
 }

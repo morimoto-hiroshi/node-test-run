@@ -13,7 +13,7 @@ class MyQrcode {
      */
     start() {
         const resultDiv = document.querySelector('#qrcode-result');
-        resultDiv.innerHTML = `<canvas style="width:320px;height:240px"></canvas><div></div>`;
+        resultDiv.innerHTML = `<canvas style="width:80%; max-width:320px;"></canvas><div></div>`;
         this.m_canvas = resultDiv.querySelector('canvas');
         this.m_canvasCtx = this.m_canvas.getContext('2d', {willReadFrequently: true});
         this.m_video = document.createElement('video');

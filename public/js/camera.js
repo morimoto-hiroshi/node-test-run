@@ -113,7 +113,13 @@ class MyCamera {
             //OKモード -> 終了
             if (this.m_doneBlock) {
                 const dataUrl = this.m_canvas.toDataURL('image/png');
-                this.m_doneBlock(dataUrl);
+                const base64 = dataUrl.replace(/^.*,/, '');
+                const bstr = atob(base64);
+                const buf = new Uint8Array(bstr.length);
+                for (var i = 0; i < bstr.length; i++) {
+                    buf[i] = bstr.charCodeAt(i);
+                }
+                this.m_doneBlock(buf);
             }
             document.querySelector('.my-camera').remove();
         } else {

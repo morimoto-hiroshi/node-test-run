@@ -5,7 +5,7 @@ window.onload = () => {
     document.querySelector('#gps-button').onclick = onGpsButton;
     document.querySelector('#qrcode-button').onclick = onQrcodeButton;
 
-    //結果要素の更新
+    //初期設定
     updateCameraResult();
 }
 

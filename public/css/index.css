@@ -1,0 +1,12 @@
+@charset "utf-8";
+
+section {
+    background-color: lightcyan;
+    border: solid 1px paleturquoise;
+    border-radius: 0.5em;
+    margin: 0.5em;
+}
+
+section > * {
+    margin: 0.5em;
+}

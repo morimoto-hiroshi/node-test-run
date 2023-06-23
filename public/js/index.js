@@ -7,6 +7,7 @@ window.onload = () => {
 
     //初期設定
     updateCameraResult();
+    initAutosizeResult();
 }
 
 //カメラ実行ボタン
@@ -63,4 +64,14 @@ function onGpsButton() {
 function onQrcodeButton() {
     const myQrcode = new MyQrcode();
     myQrcode.start();
+}
+
+//文字サイズ自動要素の生成
+function initAutosizeResult() {
+    const myAutosize = new MyAutosize();
+    const ele = myAutosize.createElement();
+    document.querySelector('#autosize-result').appendChild(ele);
+    setResizable(ele, (width, height) => {
+    }, (width, height, resized) => {
+    })
 }

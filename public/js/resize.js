@@ -9,6 +9,7 @@ function setResizable(ele, onresize, onend) {
     //開始イベントハンドラを設定
     ele.addEventListener('mousedown', onStart);
     ele.addEventListener('touchstart', onStart);
+    ele.style.cursor = 'nwse-resize';
 
     //ドラッグ開始イベントハンドラ
     function onStart(e) {

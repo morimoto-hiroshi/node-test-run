@@ -69,9 +69,11 @@ function onQrcodeButton() {
 //文字サイズ自動要素の生成
 function initAutosizeResult() {
     const myAutosize = new MyAutosize();
-    const ele = myAutosize.createElement();
+    const ele = myAutosize.createElement('123ABgpiiwwff📛😀あいう漢字', 30, 100);
     document.querySelector('#autosize-result').appendChild(ele);
     setResizable(ele, (width, height) => {
+        console.log(width, height);
     }, (width, height, resized) => {
+        console.log(width, height, resized);
     })
 }

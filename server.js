@@ -32,7 +32,7 @@ if (!g_isCloud) {
 
 //OAuth2初期化
 const OAUTH_CLIENT_JSON = '.keys/client_secret_839282543284-ijdjcam7rmko62uquv6faa33kfis546c.apps.googleusercontent.com.json';
-const oauth2Data = JSON.parse(fs.readFileSync(OAUTH_CLIENT_JSON, 'utf8'));
+const oauth2Data = g_isCloud ? {} : JSON.parse(fs.readFileSync(OAUTH_CLIENT_JSON, 'utf8'));
 const g_oauth2Client = new google.auth.OAuth2(oauth2Data.web.client_id, oauth2Data.web.client_secret, oauth2Data.web.redirect_uris[0]);
 const g_oauth2Url = g_oauth2Client.generateAuthUrl({
     access_type: 'offline',

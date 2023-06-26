@@ -11,15 +11,19 @@
         <link rel="stylesheet" type="text/css" href="/css/camera.css">
         <link rel="stylesheet" type="text/css" href="/css/autosize.css">
         <script src="/js/index.js"></script>
+        <script src="/js/autosize.js"></script>
+        <script src="/js/resize.js"></script>
         <script src="/js/camera.js"></script>
         <script src="/js/gps.js"></script>
         <script src="/js/qrcode.js"></script>
         <script src="/js/jsQR.js"></script>
-        <script src="/js/autosize.js"></script>
-        <script src="/js/resize.js"></script>
     </head>
     <body>
         <h1>ブラウザからカメラやGPSなどを使うテスト</h1>
+        <section>
+            <h2>文字サイズ自動</h2>
+            <div id="autosize-result"></div>
+        </section>
         <section>
             <h2>カメラ</h2>
             <button id="camera-button">カメラ実行</button>
@@ -36,14 +40,14 @@
             <div id="qrcode-result"></div>
         </section>
         <section>
-            <h2>文字サイズ自動</h2>
-            <div id="autosize-result"></div>
-        </section>        
+            <h2>Googleでログイン</h2>
+            <div><a href="/login">ログイン</a></div>
+        </section>
         <footer>
             <h3>Licenses</h3>
             <ul>
                 <li><a href="https://otologic.jp" target="_blank">BGM by OtoLogic (CC BY 4.0)</a></li>
-                <li><a href="https://www.flaticon.com/free-icons/radar" target="_blank">Radar icons created by Freepik - Flaticon</a></li>
+                <li><a href="https://www.flaticon.com/free-icons/post-it" target="_blank">Post it icons created by Freepik - Flaticon</a></li>
                 <li><a href="https://github.com/cozmo/jsQR" target="_blank">jsQR (Apache License 2.0)</a></li>
             </ul>
         </footer>

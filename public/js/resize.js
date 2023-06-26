@@ -3,8 +3,8 @@
  */
 function setResizable(ele, onresize, onend) {
     //クロージャのコンテキスト変数
-    var m_resized = false;
-    var m_offsetX, m_offsetY;
+    let m_resized = false;
+    let m_offsetX, m_offsetY;
 
     //開始イベントハンドラを設定
     ele.addEventListener('mousedown', onStart);
@@ -30,7 +30,7 @@ function setResizable(ele, onresize, onend) {
     //ドラッグ移動イベントハンドラ
     function onResize(e) {
         m_resized = true;
-        var drag = document.getElementsByClassName('drag')[0];
+        const drag = document.getElementsByClassName('drag')[0];
         e.preventDefault();
         const size = getSize(e);
         drag.style.width = size.width + 'px';
@@ -42,7 +42,7 @@ function setResizable(ele, onresize, onend) {
 
     //ドラッグ終了イベントハンドラ
     function onEnd(e) {
-        var drag = document.getElementsByClassName('drag')[0];
+        const drag = document.getElementsByClassName('drag')[0];
         //イベントハンドラを撤去
         document.body.removeEventListener('mousemove', onResize);
         document.body.removeEventListener('touchmove', onResize);

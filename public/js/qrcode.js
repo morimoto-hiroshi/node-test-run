@@ -34,7 +34,7 @@ class MyQrcode {
             this.m_canvas.width = this.m_video.videoWidth;
             this.m_canvasCtx.drawImage(this.m_video, 0, 0, this.m_canvas.width, this.m_canvas.height);
             const imageData = this.m_canvasCtx.getImageData(0, 0, this.m_canvas.width, this.m_canvas.height);
-            var code = jsQR(imageData.data, imageData.width, imageData.height, {
+            let code = jsQR(imageData.data, imageData.width, imageData.height, {
                 inversionAttempts: "dontInvert",
             });
             if (code) {

@@ -116,7 +116,7 @@ class MyCamera {
                 const base64 = dataUrl.replace(/^.*,/, '');
                 const bstr = atob(base64);
                 const buf = new Uint8Array(bstr.length);
-                for (var i = 0; i < bstr.length; i++) {
+                for (let i = 0; i < bstr.length; i++) {
                     buf[i] = bstr.charCodeAt(i);
                 }
                 this.m_doneBlock(buf);

@@ -41,13 +41,13 @@ class MyAutosize {
         ctx.strokeStyle = 'rgb(128,0,0)';
         ctx.fillStyle = 'pink';
         ctx.textBaseline = 'ideographic';
-        //適合サイズを求める（漸近アルゴリズムは改善の余地あり、mix/maxの場合など）
-        var min = this.m_minSize;
-        var max = this.m_maxSize;
-        var size = -1;
-        var metrics;
+        //適合サイズを求める（漸近アルゴリズムは改善の余地あり、mix/maxの場合など）というか一発で決められるのでは？
+        let min = this.m_minSize;
+        let max = this.m_maxSize;
+        let size = -1;
+        let metrics;
         while (true) {
-            var newSize = Math.round((min + max) / 2 * 10) / 10; //小数点以下1桁で丸める
+            let newSize = Math.round((min + max) / 2 * 10) / 10; //小数点以下1桁で丸める
             if (newSize == size) {
                 break;
             }
@@ -66,7 +66,7 @@ class MyAutosize {
         this.hLine(metrics.actualBoundingBoxAscent + -metrics.actualBoundingBoxDescent);
         //適合サイズで描画
         const lineHeight = metrics.actualBoundingBoxAscent + -metrics.actualBoundingBoxDescent;
-        var y = lineHeight;
+        let y = lineHeight;
         ctx.fillText(this.m_text, 0, y);
         ctx.strokeText(this.m_text, 0, y);
         //サイズ情報

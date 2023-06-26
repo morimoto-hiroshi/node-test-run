@@ -3,8 +3,12 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const https = require('https');
+const url = require('url');
+const querystring = require('querystring');
 const websocketServer = require('websocket').server;
 const {Storage} = require('@google-cloud/storage');
+const google = require('@googleapis/docs');
 
 //定数
 const [EN0] = Object.values(os.networkInterfaces());
@@ -26,22 +30,82 @@ if (!g_isCloud) {
     }
 }
 
+//OAuth2初期化
+const OAUTH_CLIENT_JSON = '.keys/client_secret_839282543284-ijdjcam7rmko62uquv6faa33kfis546c.apps.googleusercontent.com.json';
+const oauth2Data = JSON.parse(fs.readFileSync(OAUTH_CLIENT_JSON, 'utf8'));
+const g_oauth2Client = new google.auth.OAuth2(oauth2Data.web.client_id, oauth2Data.web.client_secret, oauth2Data.web.redirect_uris[0]);
+const g_oauth2Url = g_oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: 'https://www.googleapis.com/auth/userinfo.email', //Google アカウントのメインのメールアドレスを表示する
+});
+
 //httpサーバーのrequestハンドラ
 const g_httpServer = http.createServer((request, response) => {
     //url検査
-    let url = request.url;
-    if (url == '/') {
-        url = '/index.html';
+    console.log(`${new Date()} ${request.method} ${request.url}`);
+    const urlDic = url.parse(request.url);
+    const queryDic = querystring.parse(urlDic.query);
+    let urlPathname = urlDic.pathname;
+
+    //ログイン
+    if (urlPathname == '/login') {
+        console.log(`==> oauth redirect`);
+        response.writeHead(302, {'Location': g_oauth2Url});
+        response.end();
+        return;
     }
-    if (url.indexOf('..') != -1) {
+    //OAuth2コールバック
+    if (urlPathname == '/oauth2callback') {
+        const queryDic = querystring.parse(url.parse(request.url).query);
+        g_oauth2Client.getToken(queryDic.code, (err, token) => {
+            if (err) {
+                console.log(`==> oauth getToken error ${err.code} ${err.message}`);
+                response.writeHead(err.code);
+                response.end();
+            } else {
+                console.log(`==> oauth getToken`);
+                const req = https.request('https://www.googleapis.com/oauth2/v1/userinfo', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token.access_token}`
+                    },
+                }, (res) => {
+                    if (res.statusCode != 200) {
+                        console.log(`==> GET userinfo res.error ${res.statusCode} ${res.statusMessage}`);
+                        response.writeHead(res.statusCode);
+                        response.end();
+                        return;
+                    }
+                    res.setEncoding('utf8');
+                    res.on('data', (chunk) => {
+                        console.log(`==> GET userinfo ${res.statusCode} ${res.statusMessage} ${chunk}`);
+                        response.writeHead(200, {'Content-Type': 'text/plain'});
+                        response.write(chunk);
+                        response.end();
+                    }).on('end', () => {
+                    });
+                }).on('error', (err) => {
+                    console.error(`==> GET userinfo req.error ${err.message}`);
+                    response.writeHead(500);
+                    response.end();
+                });
+                req.end();
+            }
+        });
+        return;
+    }
+
+    if (urlPathname == '/') {
+        urlPathname = '/index.html';
+    }
+    if (urlPathname.indexOf('..') != -1) {
         response.writeHead(403);
         response.end();
         return;
     }
-    console.log(`${new Date()} ${url}`);
     //REST-API応答処理
-    if (url.match('^/api/.+$') != null) {
-        onRestApi(url, request, response);
+    if (urlPathname.match('^/api/.+$') != null) {
+        onRestApi(urlPathname, request, response);
         return;
     }
     //ファイル応答処理
@@ -52,9 +116,8 @@ const g_httpServer = http.createServer((request, response) => {
         '^/img/.+\\.(ico|png|jpg|gif)$',
         '^/audio/.+\\.(mp3)$'
     ];
-    if (patterns.filter(pat => url.match(pat)).length <= 0) {
+    if (patterns.filter(pat => urlPathname.match(pat)).length <= 0) {
         response.writeHead(404);
-        ;
         response.end();
         return;
     }
@@ -69,11 +132,11 @@ const g_httpServer = http.createServer((request, response) => {
         '.mp3': 'audio/mpeg'
     }
     const headers = {}
-    const ext = path.extname(url);
+    const ext = path.extname(urlPathname);
     if (ext in types) {
         headers['Content-Type'] = types[ext];
     }
-    fs.readFile('./public' + url, (err, data) => {
+    fs.readFile('./public' + urlPathname, (err, data) => {
         if (err) {
             console.log(`${new Date()} readFile error: ${err}`);
         } else {
@@ -85,9 +148,9 @@ const g_httpServer = http.createServer((request, response) => {
 });
 
 //REST-API応答処理
-function onRestApi(url, request, response) {
+function onRestApi(urlPathname, request, response) {
     const imagePath = `${DATA_DIR}/image.png`;
-    switch (url) {
+    switch (urlPathname) {
         case '/api/test':
             g_bucket.file('hello1.txt').download({}, (err, contents) => {
                 if (err) {
@@ -109,14 +172,13 @@ function onRestApi(url, request, response) {
                 g_bucket.file(imagePath).save(body, {}, (err) => {
                     const code = err ? 500 : 201;
                     const json = JSON.stringify({
-                        url: url,
+                        urlPathname: urlPathname,
                         code: code,
                         length: body.length
                     });
                     response.writeHead(code, {'Content-Type': 'text/json'});
                     response.write(json);
                     response.end();
-                    console.log(json);
                 });
 //                fs.writeFile(imagePath, body, (err) => { //ローカルファイルが使える場合
 //                    const code = err ? 500 : 201;
@@ -134,14 +196,13 @@ function onRestApi(url, request, response) {
             g_bucket.file(imagePath).exists({}, (err, exists) => {
                 const code = err ? 500 : 200;
                 const json = JSON.stringify({
-                    url: url,
+                    urlPathname: urlPathname,
                     code: code,
                     exists: exists
                 });
                 response.writeHead(code, {'Content-Type': 'text/json'});
                 response.write(json);
                 response.end();
-                console.log(json);
             });
 //            fs.exists(imagePath, (e) => {
 //                const code = 200;
@@ -181,17 +242,15 @@ function onRestApi(url, request, response) {
 //            });
             return;
         case '/api/delete-image':
-
             g_bucket.file(imagePath).delete({ignoreNotFound: true}, (err) => {
                 const code = err ? 500 : 200;
                 const json = JSON.stringify({
-                    url: url,
+                    urlPathname: urlPathname,
                     code: code
                 });
                 response.writeHead(code, {'Content-Type': 'text/json'});
                 response.write(json);
                 response.end();
-                console.log(json);
             });
 //            fs.unlink(imagePath, (err) => {
 //                const code = err ? 500 : 200;

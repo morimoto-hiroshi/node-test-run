@@ -14,6 +14,7 @@
 npm init
 npm install websocket
 npm install @google-cloud/storage
+npm install @googleapis/docs
 ```
 
 ### GCP への配置

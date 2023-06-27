@@ -8,7 +8,7 @@ const url = require('url');
 const querystring = require('querystring');
 const websocketServer = require('websocket').server;
 const {Storage} = require('@google-cloud/storage');
-const google = require('@googleapis/docs');
+const docs = require('@googleapis/docs');
 
 //定数
 const [EN0] = Object.values(os.networkInterfaces());
@@ -32,8 +32,9 @@ if (!g_isCloud) {
 
 //OAuth2初期化
 const OAUTH_CLIENT_JSON = '.keys/client_secret_839282543284-ijdjcam7rmko62uquv6faa33kfis546c.apps.googleusercontent.com.json';
-const oauth2Data = g_isCloud ? {} : JSON.parse(fs.readFileSync(OAUTH_CLIENT_JSON, 'utf8'));
-const g_oauth2Client = new google.auth.OAuth2(oauth2Data.web.client_id, oauth2Data.web.client_secret, oauth2Data.web.redirect_uris[0]);
+const oauth2Data = JSON.parse(fs.readFileSync(OAUTH_CLIENT_JSON, 'utf8'));
+const g_oauth2Client = new docs.auth.OAuth2(oauth2Data.web.client_id, oauth2Data.web.client_secret,
+        g_isCloud ? 'https://node-test-run.appspot.com/oauth2callback' : 'http://localhost:3000/oauth2callback');
 const g_oauth2Url = g_oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: 'https://www.googleapis.com/auth/userinfo.email', //Google アカウントのメインのメールアドレスを表示する

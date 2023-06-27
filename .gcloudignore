@@ -19,5 +19,7 @@ node_modules/
 # data directory
 .data
 
-# credentials directory
-.keys
+# GCS can be used without keyFile in GCP environment, but OAuth2() has no way to omit secret.
+# Since individual management is easy to make mistakes, deploy .keys to GCP as an operation policy for each directory.
+## credentials directory
+#.keys

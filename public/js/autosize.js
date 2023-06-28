@@ -4,10 +4,9 @@ class MyAutosize {
      * フィールド
      */
     m_text;
-    m_min_size;
-    m_max_size;
+    m_minSize;
+    m_maxSize;
     m_canvas = null;
-
     /**
      * html要素の生成
      */
@@ -32,6 +31,15 @@ class MyAutosize {
     }
 
     /**
+     * min/maxの設定
+     */
+    setRange(minSize, maxSize) {
+        this.m_minSize = minSize;
+        this.m_maxSize = maxSize;
+        this.draw();
+    }
+
+    /**
      * 再描画
      */
     draw() {
@@ -52,7 +60,6 @@ class MyAutosize {
                 break;
             }
             size = newSize;
-            console.log('size', size);
             ctx.font = `${size}px 'メイリオ'`;
             metrics = ctx.measureText(this.m_text);
             if (canvas.width < metrics.width) {

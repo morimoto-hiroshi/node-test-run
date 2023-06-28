@@ -8,6 +8,7 @@ window.onload = () => {
     //初期設定
     updateCameraResult();
     initAutosizeResult();
+    getLoginInfo();
 }
 
 //カメラ実行ボタン
@@ -76,4 +77,17 @@ function initAutosizeResult() {
     }, (width, height, resized) => {
         console.log(width, height, resized);
     })
+}
+
+//ログイン情報の取得
+function getLoginInfo() {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/login-info', true);
+    xhr.onload = () => {
+        const result = JSON.parse(xhr.response);
+        const [name] = result.email.split('@');
+        document.querySelector('#login-info .image').setAttribute('src', result.picture);
+        document.querySelector('#login-info .name').innerText = name;
+    };
+    xhr.send(null);
 }

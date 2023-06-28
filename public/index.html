@@ -19,7 +19,16 @@
         <script src="/js/jsQR.js"></script>
     </head>
     <body>
+        <div id="login-info">
+            <img class="image"/>
+            <span class="name"></span>
+            <a class="logout" href="/logout">ログアウト</a>
+        </div>
         <h1>ブラウザからカメラやGPSなどを使うテスト</h1>
+        <section>
+            <h2>Googleでログイン</h2>
+            <div><a href="/login">ログイン</a></div>
+        </section>
         <section>
             <h2>文字サイズ自動</h2>
             <div id="autosize-result"></div>
@@ -39,15 +48,11 @@
             <button id="qrcode-button">QRコード実行</button>
             <div id="qrcode-result"></div>
         </section>
-        <section>
-            <h2>Googleでログイン</h2>
-            <div><a href="/login">ログイン</a></div>
-        </section>
         <footer>
             <h3>Licenses</h3>
             <ul>
-                <li><a href="https://otologic.jp" target="_blank">BGM by OtoLogic (CC BY 4.0)</a></li>
                 <li><a href="https://www.flaticon.com/free-icons/post-it" target="_blank">Post it icons created by Freepik - Flaticon</a></li>
+                <li><a href="https://otologic.jp" target="_blank">BGM by OtoLogic (CC BY 4.0)</a></li>
                 <li><a href="https://github.com/cozmo/jsQR" target="_blank">jsQR (Apache License 2.0)</a></li>
             </ul>
         </footer>

@@ -1,5 +1,26 @@
 @charset "utf-8";
 
+#login-info {
+    display: flex;
+    flex-direction: row;
+    justify-content: start; /* 主軸 */
+    align-items: center; /* 交差軸 */
+}
+
+#login-info .image {
+    width: 2em;
+    height: 2em;
+    border-radius: 1em;
+}
+
+#login-info .name {
+    margin: 0 0.25em;
+}
+
+#login-info .logout {
+    margin: 0 1em;
+}
+
 section {
     background-color: lightcyan;
     border: solid 1px paleturquoise;

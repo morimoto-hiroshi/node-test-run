@@ -9,32 +9,43 @@ const querystring = require('querystring');
 const websocketServer = require('websocket').server;
 const {Storage} = require('@google-cloud/storage');
 const docs = require('@googleapis/docs');
+const crypto = require('crypto');
 
 //定数
+const IS_CLOUD = ('NODE_ENV' in process.env && process.env.NODE_ENV == 'production');
 const [EN0] = Object.values(os.networkInterfaces());
 const {address: ADDRESS} = EN0.find(({family}) => family === 'IPv4'); //サーバーのIPアドレス
 const PORT = process.env.PORT || 3000; //httpサーバーのポート
 const PROTOCOL = 'note'; //WebSocketのプロトコル識別子
 const DATA_DIR = '.data'; //データ保存ディレクトリ
+const SESSION_DIR = IS_CLOUD ? '/tmp' : '.data'; //session保存ディレクトリ
 
 //ストレージ初期化
-const g_isCloud = ('NODE_ENV' in process.env && process.env.NODE_ENV == 'production');
-const g_storage = new Storage(g_isCloud ? {} : {
+const g_storage = new Storage(IS_CLOUD ? {} : {
     keyFilename: './.keys/node-test-run-1b6e23e510da.json', //keyFile(*1)
     projectId: 'node-test-run' //プロジェクト(*2)
 });
-const g_bucket = g_storage.bucket('node-test-run-bucket');
-if (!g_isCloud) {
+const g_bucket = g_storage.bucket('node-test-run-tokyo');
+if (!IS_CLOUD) {
     if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, {recursive: true});
     }
 }
 
+/**
+ * OAuth2情報の取得方法
+ * GCPコンソールで プロジェクト(*2) を選択し、APIとサービス＞OAuth同意画面 へ。
+ * OAuth同意画面を作成する。スコープには .../auth/userinfo.email を追加。
+ * 次に APIとサービス＞認証情報 へ。＋認証情報を作成＞OAuthクライアントID＞
+ * アプリケーションの種類＝ウェブアプリケーション で作成し、
+ * 認証情報の一覧画面で、作成したクライアントのダウンロードボタンからjsonを取得。
+ */
+
 //OAuth2初期化
 const OAUTH_CLIENT_JSON = '.keys/client_secret_839282543284-ijdjcam7rmko62uquv6faa33kfis546c.apps.googleusercontent.com.json';
 const oauth2Data = JSON.parse(fs.readFileSync(OAUTH_CLIENT_JSON, 'utf8'));
 const g_oauth2Client = new docs.auth.OAuth2(oauth2Data.web.client_id, oauth2Data.web.client_secret,
-        g_isCloud ? 'https://node-test-run.appspot.com/oauth2callback' : 'http://localhost:3000/oauth2callback');
+        IS_CLOUD ? 'https://node-test-run.appspot.com/oauth2callback' : 'http://localhost:3000/oauth2callback');
 const g_oauth2Url = g_oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: 'https://www.googleapis.com/auth/userinfo.email', //Google アカウントのメインのメールアドレスを表示する
@@ -50,7 +61,6 @@ const g_httpServer = http.createServer((request, response) => {
 
     //ログイン
     if (urlPathname == '/login') {
-        console.log(`==> oauth redirect`);
         response.writeHead(302, {'Location': g_oauth2Url});
         response.end();
         return;
@@ -60,11 +70,10 @@ const g_httpServer = http.createServer((request, response) => {
         const queryDic = querystring.parse(url.parse(request.url).query);
         g_oauth2Client.getToken(queryDic.code, (err, token) => {
             if (err) {
-                console.log(`==> oauth getToken error ${err.code} ${err.message}`);
-                response.writeHead(err.code);
+                response.writeHead(err.code, {'Content-Type': 'text/plain'});
+                response.write(`OAuth getToken Error: ${err.code} ${err.message}`);
                 response.end();
             } else {
-                console.log(`==> oauth getToken`);
                 const req = https.request('https://www.googleapis.com/oauth2/v1/userinfo', {
                     method: 'GET',
                     headers: {
@@ -72,22 +81,21 @@ const g_httpServer = http.createServer((request, response) => {
                     },
                 }, (res) => {
                     if (res.statusCode != 200) {
-                        console.log(`==> GET userinfo res.error ${res.statusCode} ${res.statusMessage}`);
-                        response.writeHead(res.statusCode);
+                        response.writeHead(res.statusCode, {'Content-Type': 'text/plain'});
+                        response.write(`Getting Userinfo, Resonse Error: ${res.statusCode} ${res.statusMessage}`);
                         response.end();
                         return;
                     }
                     res.setEncoding('utf8');
                     res.on('data', (chunk) => {
-                        console.log(`==> GET userinfo ${res.statusCode} ${res.statusMessage} ${chunk}`);
-                        response.writeHead(200, {'Content-Type': 'text/plain'});
-                        response.write(chunk);
+                        saveLoginInfo(response, chunk);
+                        response.writeHead(302, {'Location': '/'});
                         response.end();
                     }).on('end', () => {
                     });
                 }).on('error', (err) => {
-                    console.error(`==> GET userinfo req.error ${err.message}`);
-                    response.writeHead(500);
+                    response.writeHead(500, {'Content-Type': 'text/plain'});
+                    response.write(`Getting Userinfo, Request Error: ${err}`);
                     response.end();
                 });
                 req.end();
@@ -95,7 +103,22 @@ const g_httpServer = http.createServer((request, response) => {
         });
         return;
     }
-
+    //ログアウト
+    if (urlPathname == '/logout') {
+        deleteLoginInfo(request, response);
+        response.writeHead(302, {'Location': '/'});
+        response.end();
+        return;
+    }
+    
+    //ログインしていなければログイン画面へ
+    const loginInfoJson = getLoginInfoJson(request);
+    if (loginInfoJson === null && urlPathname != '/login.html') {
+        response.writeHead(302, {'Location': '/login.html'});
+        response.end();
+        return;
+    }
+        
     if (urlPathname == '/') {
         urlPathname = '/index.html';
     }
@@ -106,7 +129,7 @@ const g_httpServer = http.createServer((request, response) => {
     }
     //REST-API応答処理
     if (urlPathname.match('^/api/.+$') != null) {
-        onRestApi(urlPathname, request, response);
+        onRestApi(request, response, urlPathname, loginInfoJson);
         return;
     }
     //ファイル応答処理
@@ -148,21 +171,87 @@ const g_httpServer = http.createServer((request, response) => {
     });
 });
 
+//ログイン情報取得
+function getLoginInfoJson(request) {
+    const sessionId = getCookie(request, 'session-id');
+    if (sessionId == '') {
+        return null;
+    }
+    const path = getSessionJsonPath(sessionId);
+    if (!fs.existsSync(path)) {
+        return null;
+    }
+    return fs.readFileSync(path, 'utf8');
+}
+
+//ログイン情報保存
+function saveLoginInfo(response, infoJson) {
+    const sessionId = crypto.createHash('sha1').update(createUuid()).digest('hex');
+    setCookie(response, 'session-id', sessionId);
+    const path = getSessionJsonPath(sessionId);
+    fs.writeFileSync(path, infoJson);
+}
+
+//ログイン情報削除
+function deleteLoginInfo(request, response) {
+    expireCookie(response, 'session-id');
+    const sessionId = getCookie(request, 'session-id');
+    if (sessionId == '') {
+        return;
+    }
+    const path = getSessionJsonPath(sessionId);
+    if (!fs.existsSync(path)) {
+        return;
+    }
+    fs.unlink(path, () => {});
+}
+
+function getSessionJsonPath(sessionId){
+    return `${SESSION_DIR}/sess-${sessionId}.json`;
+}
+
+//Cookie取得
+function getCookie(request, name) {
+    const cookie = request.headers.cookie;
+    if (cookie === undefined) {
+        return '';
+    }
+    const datas = cookie.split(';').map(data => data.trim());
+    const data = datas.find(data => data.startsWith(`${name}=`));
+    if (data === undefined) {
+        return '';
+    }
+    const value = data.substring(`${name}=`.length);
+    return unescape(value);
+}
+
+//Cookie設定
+function setCookie(response, name, value) {
+    const escapedValue = escape(value);
+    response.setHeader('Set-Cookie', [`${name}=${escapedValue}`]);
+}
+
+//Cookie破棄
+function expireCookie(response, name) {
+    response.setHeader('Set-Cookie', [`${name}=; max-age=0`]);
+}
+
+let g_uuidTime = new Date().getTime();
+let g_uuidSerial = 0;
+
+//UUID生成
+function createUuid() {
+    return [ADDRESS, process.pid, g_uuidTime, g_uuidSerial++].join('.');
+}
+
 //REST-API応答処理
-function onRestApi(urlPathname, request, response) {
+function onRestApi(request, response, urlPathname, loginInfoJson) {
     const imagePath = `${DATA_DIR}/image.png`;
     switch (urlPathname) {
-        case '/api/test':
-            g_bucket.file('hello1.txt').download({}, (err, contents) => {
-                if (err) {
-                    response.writeHead(500);
-                    response.end();
-                } else {
-                    response.writeHead(200, {'Content-Type': 'text/plain'});
-                    response.write(contents.toString());
-                    response.end();
-                }
-            });
+        case '/api/login-info':
+            response.writeHead(200, {'Content-Type': 'text/json'});
+            response.write(loginInfoJson);
+            response.end();
             return;
         case '/api/add-image':
             let bufs = [];

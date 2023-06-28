@@ -12,13 +12,13 @@ class MyGps {
         navigator.geolocation.getCurrentPosition((pos) => {
             if (doneBlock) {
                 const coords = pos.coords;
-                const description = `Latitude : ${coords.latitude}\n`
-                        + `Longitude: ${coords.longitude}\n`
-                        + `Altitude: ${coords.altitude} meter\n`
-                        + `Lat/Lon accuracy: ${coords.accuracy} meter\n`
-                        + `Alt accuracy: ${coords.altitudeAccuracy} meter\n`
-                        + `Heading: ${coords.speed} degree (N:0, E:90, W:270)\n`
-                        + `Speed: ${coords.speed} m/s\n`;
+                const description = `緯度: ${coords.latitude}\n`
+                        + `経度: ${coords.longitude}\n`
+                        + `高度: ${coords.altitude} meter\n`
+                        + `緯度/経度の精度: ${coords.accuracy} meter\n`
+                        + `高度の精度: ${coords.altitudeAccuracy} meter\n`
+                        + `進行方向: ${coords.speed} degree (N:0, E:90, W:270)\n`
+                        + `速度: ${coords.speed} m/s\n`;
                 doneBlock(pos.coords, description);
             }
         }, (err) => {

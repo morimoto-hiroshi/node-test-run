@@ -163,9 +163,16 @@ function onOAuth2Callback(request, response) {
                 res.setEncoding('utf8');
                 res.on('data', (chunk) => {
                     //成功したとき
-                    saveLoginInfo(response, chunk);
-                    response.writeHead(302, {'Location': '/'});
-                    response.end();
+                    const loginInfo = JSON.parse(chunk);
+                    if (isAllowedMailDomain(loginInfo.email)) {
+                        saveLoginInfo(response, chunk);
+                        response.writeHead(302, {'Location': '/'});
+                        response.end();
+                    } else {
+                        response.writeHead(401, {'Content-Type': 'text/plain; charset=utf-8'});
+                        response.write(`このメールアドレス '${loginInfo.email}' ではご利用できません`);
+                        response.end();
+                    }
                 });
             });
             req.on('error', (err) => {
@@ -177,6 +184,13 @@ function onOAuth2Callback(request, response) {
             req.end();
         }
     });
+}
+
+//アクセス許可されたメールアドレスかどうか
+function isAllowedMailDomain(email) {
+    const [emailDomain] = email.match(/[^@]+$/);
+    const authInfo = JSON.parse(fs.readFileSync('.keys/auth-info.json', 'utf8'));
+    return authInfo.allowed_domains.filter(domain => domain == emailDomain).length > 0;
 }
 
 //ログイン情報取得

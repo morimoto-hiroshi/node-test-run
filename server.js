@@ -58,7 +58,6 @@ const g_httpServer = http.createServer((request, response) => {
     const urlDic = url.parse(request.url);
     const queryDic = querystring.parse(urlDic.query);
     let urlPathname = urlDic.pathname;
-
     //ログイン
     if (urlPathname == '/login') {
         response.writeHead(302, {'Location': g_oauth2Url});
@@ -67,40 +66,7 @@ const g_httpServer = http.createServer((request, response) => {
     }
     //OAuth2コールバック
     if (urlPathname == '/oauth2callback') {
-        const queryDic = querystring.parse(url.parse(request.url).query);
-        g_oauth2Client.getToken(queryDic.code, (err, token) => {
-            if (err) {
-                response.writeHead(err.code, {'Content-Type': 'text/plain'});
-                response.write(`OAuth getToken Error: ${err.code} ${err.message}`);
-                response.end();
-            } else {
-                const req = https.request('https://www.googleapis.com/oauth2/v1/userinfo', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token.access_token}`
-                    },
-                }, (res) => {
-                    if (res.statusCode != 200) {
-                        response.writeHead(res.statusCode, {'Content-Type': 'text/plain'});
-                        response.write(`Getting Userinfo, Resonse Error: ${res.statusCode} ${res.statusMessage}`);
-                        response.end();
-                        return;
-                    }
-                    res.setEncoding('utf8');
-                    res.on('data', (chunk) => {
-                        saveLoginInfo(response, chunk);
-                        response.writeHead(302, {'Location': '/'});
-                        response.end();
-                    }).on('end', () => {
-                    });
-                }).on('error', (err) => {
-                    response.writeHead(500, {'Content-Type': 'text/plain'});
-                    response.write(`Getting Userinfo, Request Error: ${err}`);
-                    response.end();
-                });
-                req.end();
-            }
-        });
+        onOAuth2Callback(request, response);
         return;
     }
     //ログアウト
@@ -110,15 +76,14 @@ const g_httpServer = http.createServer((request, response) => {
         response.end();
         return;
     }
-    
-    //ログインしていなければログイン画面へ
+    //上記以外で、ログインしていなければログイン画面へ
     const loginInfoJson = getLoginInfoJson(request);
     if (loginInfoJson === null && urlPathname != '/login.html') {
         response.writeHead(302, {'Location': '/login.html'});
         response.end();
         return;
     }
-        
+    //Pathnameの検査と置換
     if (urlPathname == '/') {
         urlPathname = '/index.html';
     }
@@ -171,6 +136,49 @@ const g_httpServer = http.createServer((request, response) => {
     });
 });
 
+//OAuth2コールバック
+function onOAuth2Callback(request, response) {
+    //渡された認可コード(authorization code)を送ってアクセストークンを取得
+    const queryDic = querystring.parse(url.parse(request.url).query);
+    g_oauth2Client.getToken(queryDic.code, (err, token) => {
+        if (err) {
+            response.writeHead(err.code, {'Content-Type': 'text/plain'});
+            response.write(`OAuth getToken Error: ${err.code} ${err.message}`);
+            response.end();
+        } else {
+            //アクセストークンが得られたら、Google APIでユーザー情報を取得する
+            const req = https.request('https://www.googleapis.com/oauth2/v1/userinfo', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token.access_token}`
+                },
+            }, (res) => {
+                if (res.statusCode != 200) {
+                    //access_tokenが違う場合など
+                    response.writeHead(res.statusCode, {'Content-Type': 'text/plain'});
+                    response.write(`Getting Userinfo, Resonse Error: ${res.statusCode} ${res.statusMessage}`);
+                    response.end();
+                    return;
+                }
+                res.setEncoding('utf8');
+                res.on('data', (chunk) => {
+                    //成功したとき
+                    saveLoginInfo(response, chunk);
+                    response.writeHead(302, {'Location': '/'});
+                    response.end();
+                });
+            });
+            req.on('error', (err) => {
+                //www.googleapis.comに接続できない場合など
+                response.writeHead(500, {'Content-Type': 'text/plain'});
+                response.write(`Getting Userinfo, Request Error: ${err}`);
+                response.end();
+            })
+            req.end();
+        }
+    });
+}
+
 //ログイン情報取得
 function getLoginInfoJson(request) {
     const sessionId = getCookie(request, 'session-id');
@@ -203,10 +211,12 @@ function deleteLoginInfo(request, response) {
     if (!fs.existsSync(path)) {
         return;
     }
-    fs.unlink(path, () => {});
+    fs.unlink(path, () => {
+    });
 }
 
-function getSessionJsonPath(sessionId){
+//sessionファイルのパス名取得
+function getSessionJsonPath(sessionId) {
     return `${SESSION_DIR}/sess-${sessionId}.json`;
 }
 
@@ -236,6 +246,7 @@ function expireCookie(response, name) {
     response.setHeader('Set-Cookie', [`${name}=; max-age=0`]);
 }
 
+//UUID生成用フィールド
 let g_uuidTime = new Date().getTime();
 let g_uuidSerial = 0;
 

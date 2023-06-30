@@ -136,7 +136,9 @@ const g_httpServer = http.createServer((request, response) => {
     });
 });
 
-//OAuth2コールバック
+/**
+ * OAuth2コールバック
+ */
 function onOAuth2Callback(request, response) {
     //渡された認可コード(authorization code)を送ってアクセストークンを取得
     const queryDic = querystring.parse(url.parse(request.url).query);
@@ -186,14 +188,18 @@ function onOAuth2Callback(request, response) {
     });
 }
 
-//アクセス許可されたメールアドレスかどうか
+/**
+ * アクセス許可されたメールアドレスかどうか
+ */
 function isAllowedMailDomain(email) {
     const [emailDomain] = email.match(/[^@]+$/);
     const authInfo = JSON.parse(fs.readFileSync('.keys/auth-info.json', 'utf8'));
     return authInfo.allowed_domains.filter(domain => domain == emailDomain).length > 0;
 }
 
-//ログイン情報取得
+/**
+ * ログイン情報取得
+ */
 function getLoginInfoJson(request) {
     const sessionId = getCookie(request, 'session-id');
     if (sessionId == '') {
@@ -206,7 +212,9 @@ function getLoginInfoJson(request) {
     return fs.readFileSync(path, 'utf8');
 }
 
-//ログイン情報保存
+/**
+ * ログイン情報保存
+ */
 function saveLoginInfo(response, infoJson) {
     const sessionId = crypto.createHash('sha1').update(createUuid()).digest('hex');
     setCookie(response, 'session-id', sessionId);
@@ -214,7 +222,9 @@ function saveLoginInfo(response, infoJson) {
     fs.writeFileSync(path, infoJson);
 }
 
-//ログイン情報削除
+/**
+ * ログイン情報削除
+ */
 function deleteLoginInfo(request, response) {
     expireCookie(response, 'session-id');
     const sessionId = getCookie(request, 'session-id');
@@ -229,12 +239,16 @@ function deleteLoginInfo(request, response) {
     });
 }
 
-//sessionファイルのパス名取得
+/**
+ * sessionファイルのパス名取得
+ */
 function getSessionJsonPath(sessionId) {
     return `${SESSION_DIR}/sess-${sessionId}.json`;
 }
 
-//Cookie取得
+/**
+ * Cookie取得
+ */
 function getCookie(request, name) {
     const cookie = request.headers.cookie;
     if (cookie === undefined) {
@@ -249,27 +263,37 @@ function getCookie(request, name) {
     return unescape(value);
 }
 
-//Cookie設定
+/**
+ * Cookie設定
+ */
 function setCookie(response, name, value) {
     const escapedValue = escape(value);
     response.setHeader('Set-Cookie', [`${name}=${escapedValue}`]);
 }
 
-//Cookie破棄
+/**
+ * Cookie破棄
+ */
 function expireCookie(response, name) {
     response.setHeader('Set-Cookie', [`${name}=; max-age=0`]);
 }
 
-//UUID生成用フィールド
+/**
+ * UUID生成用フィールド
+ */
 let g_uuidTime = new Date().getTime();
 let g_uuidSerial = 0;
 
-//UUID生成
+/**
+ * UUID生成
+ */
 function createUuid() {
     return [ADDRESS, process.pid, g_uuidTime, g_uuidSerial++].join('.');
 }
 
-//REST-API応答処理
+/**
+ * REST-API応答処理
+ */
 function onRestApi(request, response, urlPathname, loginInfoJson) {
     const imagePath = `${DATA_DIR}/image.png`;
     switch (urlPathname) {
@@ -434,7 +458,9 @@ g_websocketServer.on('request', (request) => {
     });
 });
 
-//コネクション確立時の処理
+/**
+ * コネクション確立時の処理
+ */
 function onAccept(connection) {
     const sessionId = `${connection.socket._peername.address}:${connection.socket._peername.port}:${new Date().getTime()}`;
     console.log(`${new Date()} acceepted: ${sessionId}`);
@@ -451,7 +477,9 @@ function onAccept(connection) {
     });
 }
 
-//add,drag,updateコマンドの処理
+/**
+ * add,drag,updateコマンドの処理
+ */
 function onAddDragUpdate(data) {
     const json = JSON.stringify(data);
     const jsonPath = `${DATA_DIR}/${data.unit.unitId}.json`;
@@ -465,7 +493,9 @@ function onAddDragUpdate(data) {
     g_websocketServer.broadcast(json); //全端末に送る
 }
 
-//deleteコマンドの処理
+/**
+ * deleteコマンドの処理
+ */
 function onDelete(data) {
     const json = JSON.stringify(data);
     const jsonPath = `${DATA_DIR}/${data.unit.unitId}.json`;

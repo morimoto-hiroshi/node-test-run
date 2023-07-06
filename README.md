@@ -19,7 +19,7 @@ npm install @googleapis/docs
 
 ### GCP への配置
 
-+ [このあたり](https://cloud.google.com/appengine/docs/standard/nodejs/building-app/creating-project?hl=ja)を参考に
++ [GAEドキュメント - Node.jsランタイム > アプリの構築 > プロジェクトの作成](https://cloud.google.com/appengine/docs/standard/nodejs/building-app/creating-project?hl=ja)を参考に
 
 + プロジェクトを登録。
 https://console.cloud.google.com/

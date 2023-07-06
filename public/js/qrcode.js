@@ -1,3 +1,6 @@
+/**
+ * QRコードリーダー
+ */
 class MyQrcode {
 
     /**

@@ -1,3 +1,6 @@
+/**
+ * GPS測定
+ */
 class MyGps {
 
     /**

@@ -1,4 +1,6 @@
-//ロード時の初期化処理
+/**
+ * ロード時の初期化処理
+ */
 window.onload = () => {
     //初期設定
     getLoginInfo();
@@ -13,7 +15,9 @@ window.onload = () => {
     document.querySelector('#qrcode-button').onclick = onQrcodeButton;
 }
 
-//ログイン情報の取得
+/**
+ * ログイン情報の取得
+ */
 function getLoginInfo() {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', '/api/login-info', true);
@@ -28,7 +32,9 @@ function getLoginInfo() {
 
 let myAutosize = null;
 
-//文字サイズ自動要素の生成
+/**
+ * 文字サイズ自動要素の生成
+ */
 function initAutosizeResult() {
     myAutosize = new MyAutosize();
     const ele = myAutosize.createElement('123ABgpiiwwff📛😀あいう漢字', 30, 100);
@@ -38,6 +44,9 @@ function initAutosizeResult() {
     })
 }
 
+/**
+ * 文字サイズ自動 Min/Max の値変更
+ */
 function onAutosizeRange() {
     const MIN = 10;
     const MAX = 200;
@@ -55,7 +64,9 @@ function onAutosizeRange() {
     myAutosize.setRange(min, max);
 }
 
-//アップロードされた画像があれば表示
+/**
+ * アップロードされた画像があれば表示
+ */
 function updateCameraResult() {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', '/api/exist-image', true);
@@ -71,7 +82,9 @@ function updateCameraResult() {
     xhr.send(null);
 }
 
-//アップロードされた画像の削除
+/**
+ * アップロードされた画像の削除
+ */
 function deleteCameraResult() {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/delete-image', true);
@@ -81,7 +94,9 @@ function deleteCameraResult() {
     xhr.send(null);
 }
 
-//カメラ実行ボタン
+/**
+ * カメラ実行ボタン
+ */
 function onCameraButton() {
     const myCamera = new MyCamera();
     myCamera.start((buf) => {
@@ -95,7 +110,9 @@ function onCameraButton() {
     });
 }
 
-//GPS実行ボタン
+/**
+ * GPS実行ボタン
+ */
 function onGpsButton() {
     const myGps = new MyGps();
     myGps.start((coords, description) => {
@@ -105,7 +122,9 @@ function onGpsButton() {
     });
 }
 
-//QRコード実行ボタン
+/**
+ * QRコード実行ボタン
+ */
 function onQrcodeButton() {
     const myQrcode = new MyQrcode();
     myQrcode.start();

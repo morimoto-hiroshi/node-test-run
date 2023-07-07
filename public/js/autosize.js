@@ -51,7 +51,7 @@ class MyAutosize {
         const ctx = canvas.getContext('2d');
         ctx.strokeStyle = 'rgb(128,0,0)';
         ctx.fillStyle = 'pink';
-        ctx.textBaseline = 'ideographic';
+        ctx.textBaseline = 'top';
         //適合サイズを求める（漸近アルゴリズムは改善の余地あり、mix/maxの場合など）というか一発で決められるのでは？
         let min = this.m_minSize;
         let max = this.m_maxSize;
@@ -72,17 +72,21 @@ class MyAutosize {
             }
         }
         //補助線
-        this.hLine(metrics.actualBoundingBoxAscent);
-        this.hLine(metrics.actualBoundingBoxAscent + -metrics.actualBoundingBoxDescent);
+        let y = size * 0.5;
+        this.hLine(y); //top
+        this.hLine(y + size); //bottom
+        ctx.save();
+        ctx.font = '30px Courier New';
+        ctx.strokeText('top', 0, y - 30);
+        ctx.strokeText('bottom', 0, y + size);
+        ctx.restore();
         //適合サイズで描画
-        const lineHeight = metrics.actualBoundingBoxAscent + -metrics.actualBoundingBoxDescent;
-        let y = lineHeight;
         ctx.fillText(this.m_text, 0, y);
         ctx.strokeText(this.m_text, 0, y);
         //サイズ情報
-        y += lineHeight;
+        y += size * 1.5;
         ctx.fillText(ctx.font, 0, y);
-        y += lineHeight;
+        y += size * 1.5;
         ctx.fillText(`min:${this.m_minSize}px, max:${this.m_maxSize}px`, 0, y);
     }
 

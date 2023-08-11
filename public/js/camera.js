@@ -117,10 +117,10 @@ class MyCamera {
             if (this.m_doneBlock) {
                 const dataUrl = this.m_canvas.toDataURL('image/png');
                 const base64 = dataUrl.replace(/^.*,/, '');
-                const bstr = atob(base64);
-                const buf = new Uint8Array(bstr.length);
+                const bstr = atob(base64); //bstrは1文字2byte
+                const buf = new Uint8Array(bstr.length); //bufは1文字1byte
                 for (let i = 0; i < bstr.length; i++) {
-                    buf[i] = bstr.charCodeAt(i);
+                    buf[i] = bstr.charCodeAt(i); //1文字1byteに変換
                 }
                 this.m_doneBlock(buf);
             }

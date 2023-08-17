@@ -52,35 +52,35 @@ const g_oauth2Url = g_oauth2Client.generateAuthUrl({
 });
 
 //httpサーバーのrequestハンドラ
-const g_httpServer = http.createServer((request, response) => {
+const g_httpServer = http.createServer((req, res) => {
     //url検査
-    console.log(`${new Date()} ${request.method} ${request.url}`);
-    const urlDic = url.parse(request.url);
+    console.log(`${new Date()} ${req.method} ${req.url}`);
+    const urlDic = url.parse(req.url);
     const queryDic = querystring.parse(urlDic.query);
     let urlPathname = urlDic.pathname;
     //ログイン
     if (urlPathname == '/login') {
-        response.writeHead(302, {'Location': g_oauth2Url});
-        response.end();
+        res.writeHead(302, {'Location': g_oauth2Url});
+        res.end();
         return;
     }
     //OAuth2コールバック
     if (urlPathname == '/oauth2callback') {
-        onOAuth2Callback(request, response);
+        onOAuth2Callback(req, res);
         return;
     }
     //ログアウト
     if (urlPathname == '/logout') {
-        deleteLoginInfo(request, response);
-        response.writeHead(302, {'Location': '/'});
-        response.end();
+        deleteLoginInfo(req, res);
+        res.writeHead(302, {'Location': '/'});
+        res.end();
         return;
     }
     //上記以外で、ログインしていなければログイン画面へ
-    const loginInfoJson = getLoginInfoJson(request);
+    const loginInfoJson = getLoginInfoJson(req);
     if (loginInfoJson === null && urlPathname != '/login.html') {
-        response.writeHead(302, {'Location': '/login.html'});
-        response.end();
+        res.writeHead(302, {'Location': '/login.html'});
+        res.end();
         return;
     }
     //Pathnameの検査と置換
@@ -88,13 +88,13 @@ const g_httpServer = http.createServer((request, response) => {
         urlPathname = '/index.html';
     }
     if (urlPathname.indexOf('..') != -1) {
-        response.writeHead(403);
-        response.end();
+        res.writeHead(403);
+        res.end();
         return;
     }
     //REST-API応答処理
     if (urlPathname.match('^/api/.+$') != null) {
-        onRestApi(request, response, urlPathname, loginInfoJson);
+        onRestApi(req, res, urlPathname, loginInfoJson);
         return;
     }
     //ファイル応答処理
@@ -106,8 +106,8 @@ const g_httpServer = http.createServer((request, response) => {
         '^/audio/.+\\.(mp3)$'
     ];
     if (patterns.filter(pat => urlPathname.match(pat)).length <= 0) {
-        response.writeHead(404);
-        response.end();
+        res.writeHead(404);
+        res.end();
         return;
     }
     const types = {
@@ -129,9 +129,9 @@ const g_httpServer = http.createServer((request, response) => {
         if (err) {
             console.log(`${new Date()} readFile error: ${err}`);
         } else {
-            response.writeHead(200, headers);
-            response.write(data);
-            response.end();
+            res.writeHead(200, headers);
+            res.write(data);
+            res.end();
         }
     });
 });
@@ -139,51 +139,51 @@ const g_httpServer = http.createServer((request, response) => {
 /**
  * OAuth2コールバック
  */
-function onOAuth2Callback(request, response) {
+function onOAuth2Callback(req, res) {
     //渡された認可コード(authorization code)を送ってアクセストークンを取得
-    const queryDic = querystring.parse(url.parse(request.url).query);
+    const queryDic = querystring.parse(url.parse(req.url).query);
     g_oauth2Client.getToken(queryDic.code, (err, token) => {
         if (err) {
-            response.writeHead(err.code, {'Content-Type': 'text/plain'});
-            response.write(`OAuth getToken Error: ${err.code} ${err.message}`);
-            response.end();
+            res.writeHead(err.code, {'Content-Type': 'text/plain'});
+            res.write(`OAuth getToken Error: ${err.code} ${err.message}`);
+            res.end();
         } else {
             //アクセストークンが得られたら、Google APIでユーザー情報を取得する
-            const req = https.request('https://www.googleapis.com/oauth2/v1/userinfo', {
+            const req2 = https.request('https://www.googleapis.com/oauth2/v1/userinfo', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token.access_token}`
                 },
-            }, (res) => {
-                if (res.statusCode != 200) {
+            }, (res2) => {
+                if (res2.statusCode != 200) {
                     //access_tokenが違う場合など
-                    response.writeHead(res.statusCode, {'Content-Type': 'text/plain'});
-                    response.write(`Getting Userinfo, Resonse Error: ${res.statusCode} ${res.statusMessage}`);
-                    response.end();
+                    res.writeHead(res2.statusCode, {'Content-Type': 'text/plain'});
+                    res.write(`Getting Userinfo, Resonse Error: ${res2.statusCode} ${res2.statusMessage}`);
+                    res.end();
                     return;
                 }
-                res.setEncoding('utf8');
-                res.on('data', (chunk) => {
+                res2.setEncoding('utf8');
+                res2.on('data', (chunk) => {
                     //成功したとき
                     const loginInfo = JSON.parse(chunk);
                     if (isAllowedMailDomain(loginInfo.email)) {
-                        saveLoginInfo(response, chunk);
-                        response.writeHead(302, {'Location': '/'});
-                        response.end();
+                        saveLoginInfo(res, chunk);
+                        res.writeHead(302, {'Location': '/'});
+                        res.end();
                     } else {
-                        response.writeHead(401, {'Content-Type': 'text/plain; charset=utf-8'});
-                        response.write(`このメールアドレス '${loginInfo.email}' ではご利用できません`);
-                        response.end();
+                        res.writeHead(401, {'Content-Type': 'text/plain; charset=utf-8'});
+                        res.write(`このメールアドレス '${loginInfo.email}' ではご利用できません`);
+                        res.end();
                     }
                 });
             });
-            req.on('error', (err) => {
+            req2.on('error', (err) => {
                 //www.googleapis.comに接続できない場合など
-                response.writeHead(500, {'Content-Type': 'text/plain'});
-                response.write(`Getting Userinfo, Request Error: ${err}`);
-                response.end();
+                res.writeHead(500, {'Content-Type': 'text/plain'});
+                res.write(`Getting Userinfo, Request Error: ${err}`);
+                res.end();
             })
-            req.end();
+            req2.end();
         }
     });
 }
@@ -200,8 +200,8 @@ function isAllowedMailDomain(email) {
 /**
  * ログイン情報取得
  */
-function getLoginInfoJson(request) {
-    const sessionId = getCookie(request, 'session-id');
+function getLoginInfoJson(req) {
+    const sessionId = getCookie(req, 'session-id');
     if (sessionId == '') {
         return null;
     }
@@ -215,9 +215,9 @@ function getLoginInfoJson(request) {
 /**
  * ログイン情報保存
  */
-function saveLoginInfo(response, infoJson) {
+function saveLoginInfo(res, infoJson) {
     const sessionId = crypto.createHash('sha1').update(createUuid()).digest('hex');
-    setCookie(response, 'session-id', sessionId);
+    setCookie(res, 'session-id', sessionId);
     const path = getSessionJsonPath(sessionId);
     fs.writeFileSync(path, infoJson);
 }
@@ -225,9 +225,9 @@ function saveLoginInfo(response, infoJson) {
 /**
  * ログイン情報削除
  */
-function deleteLoginInfo(request, response) {
-    expireCookie(response, 'session-id');
-    const sessionId = getCookie(request, 'session-id');
+function deleteLoginInfo(req, res) {
+    expireCookie(res, 'session-id');
+    const sessionId = getCookie(req, 'session-id');
     if (sessionId == '') {
         return;
     }
@@ -249,8 +249,8 @@ function getSessionJsonPath(sessionId) {
 /**
  * Cookie取得
  */
-function getCookie(request, name) {
-    const cookie = request.headers.cookie;
+function getCookie(req, name) {
+    const cookie = req.headers.cookie;
     if (cookie === undefined) {
         return '';
     }
@@ -266,16 +266,16 @@ function getCookie(request, name) {
 /**
  * Cookie設定
  */
-function setCookie(response, name, value) {
+function setCookie(res, name, value) {
     const escapedValue = escape(value);
-    response.setHeader('Set-Cookie', [`${name}=${escapedValue}`]);
+    res.setHeader('Set-Cookie', [`${name}=${escapedValue}`]);
 }
 
 /**
  * Cookie破棄
  */
-function expireCookie(response, name) {
-    response.setHeader('Set-Cookie', [`${name}=; max-age=0`]);
+function expireCookie(res, name) {
+    res.setHeader('Set-Cookie', [`${name}=; max-age=0`]);
 }
 
 /**
@@ -294,17 +294,17 @@ function createUuid() {
 /**
  * REST-API応答処理
  */
-function onRestApi(request, response, urlPathname, loginInfoJson) {
+function onRestApi(req, res, urlPathname, loginInfoJson) {
     const imagePath = `${DATA_DIR}/image.png`;
     switch (urlPathname) {
         case '/api/login-info':
-            response.writeHead(200, {'Content-Type': 'text/json'});
-            response.write(loginInfoJson);
-            response.end();
+            res.writeHead(200, {'Content-Type': 'text/json'});
+            res.write(loginInfoJson);
+            res.end();
             return;
         case '/api/add-image':
             let bufs = [];
-            request.on('data', (chunk) => {
+            req.on('data', (chunk) => {
                 bufs.push(chunk);
             }).on('end', () => {
                 let body = Buffer.concat(bufs);
@@ -315,9 +315,9 @@ function onRestApi(request, response, urlPathname, loginInfoJson) {
                         code: code,
                         length: body.length
                     });
-                    response.writeHead(code, {'Content-Type': 'text/json'});
-                    response.write(json);
-                    response.end();
+                    res.writeHead(code, {'Content-Type': 'text/json'});
+                    res.write(json);
+                    res.end();
                 });
 //                fs.writeFile(imagePath, body, (err) => { //ローカルファイルが使える場合
 //                    const code = err ? 500 : 201;
@@ -325,9 +325,9 @@ function onRestApi(request, response, urlPathname, loginInfoJson) {
 //                        code: code,
 //                        length: body.length
 //                    });
-//                    response.writeHead(code, {'Content-Type': 'text/json'});
-//                    response.write(json);
-//                    response.end();
+//                    res.writeHead(code, {'Content-Type': 'text/json'});
+//                    res.write(json);
+//                    res.end();
 //                })
             });
             return;
@@ -339,9 +339,9 @@ function onRestApi(request, response, urlPathname, loginInfoJson) {
                     code: code,
                     exists: exists
                 });
-                response.writeHead(code, {'Content-Type': 'text/json'});
-                response.write(json);
-                response.end();
+                res.writeHead(code, {'Content-Type': 'text/json'});
+                res.write(json);
+                res.end();
             });
 //            fs.exists(imagePath, (e) => {
 //                const code = 200;
@@ -349,34 +349,34 @@ function onRestApi(request, response, urlPathname, loginInfoJson) {
 //                    code: code,
 //                    exists: e
 //                });
-//                response.writeHead(code, {'Content-Type': 'text/json'});
-//                response.write(json);
-//                response.end();
+//                res.writeHead(code, {'Content-Type': 'text/json'});
+//                res.write(json);
+//                res.end();
 //            });
             return;
         case '/api/get-image':
             g_bucket.file(imagePath).createReadStream()
-                    //成功時:resopnse -> end
-                    //エラー時:response -> error
-                    .on('response', (res) => {
-                        if (res.statusCode == 200) {
-                            response.writeHead(200, {'Content-Type': 'image/png'});
+                    //成功時:res -> end
+                    //エラー時:res -> error
+                    .on('response', (res2) => {
+                        if (res2.statusCode == 200) {
+                            res.writeHead(200, {'Content-Type': 'image/png'});
                         } else {
-                            response.writeHead(res.statusCode, res.statusMessage);
+                            res.writeHead(res2.statusCode, res2.statusMessage);
                         }
                     }).on('end', () => {
-                response.end();
+                res.end();
             }).on('error', () => {
-                response.end();
-            }).pipe(response);
+                res.end();
+            }).pipe(res);
 //            fs.readFile(imagePath, (err, data) => {
 //                if (err) {
-//                    response.writeHead(404);
-//                    response.end();
+//                    res.writeHead(404);
+//                    res.end();
 //                } else {
-//                    response.writeHead(200, {'Content-Type': 'image/png'});
-//                    response.write(data);
-//                    response.end();
+//                    res.writeHead(200, {'Content-Type': 'image/png'});
+//                    res.write(data);
+//                    res.end();
 //                }
 //            });
             return;
@@ -387,23 +387,23 @@ function onRestApi(request, response, urlPathname, loginInfoJson) {
                     urlPathname: urlPathname,
                     code: code
                 });
-                response.writeHead(code, {'Content-Type': 'text/json'});
-                response.write(json);
-                response.end();
+                res.writeHead(code, {'Content-Type': 'text/json'});
+                res.write(json);
+                res.end();
             });
 //            fs.unlink(imagePath, (err) => {
 //                const code = err ? 500 : 200;
 //                const json = JSON.stringify({
 //                    code: code
 //                });
-//                response.writeHead(code, {'Content-Type': 'text/json'});
-//                response.write(json);
-//                response.end();
+//                res.writeHead(code, {'Content-Type': 'text/json'});
+//                res.write(json);
+//                res.end();
 //            });
             return;
     }
-    response.writeHead(403);
-    response.end();
+    res.writeHead(403);
+    res.end();
 }
 
 //httpサーバーを起動
@@ -418,17 +418,17 @@ const g_websocketServer = new websocketServer({
 });
 
 //WebSocketサーバーのrequestハンドラ
-g_websocketServer.on('request', (request) => {
+g_websocketServer.on('request', (req) => {
     //originの検査
-    console.log(`${new Date()} check origin: ${request.origin}`);
-    if (request.origin !== `http://localhost:${PORT}` && request.origin !== `http://${ADDRESS}:${PORT}`) {
-        request.reject();
-        console.log(`${new Date()} REJECTED: ${request.origin}`);
+    console.log(`${new Date()} check origin: ${req.origin}`);
+    if (req.origin !== `http://localhost:${PORT}` && req.origin !== `http://${ADDRESS}:${PORT}`) {
+        req.reject();
+        console.log(`${new Date()} REJECTED: ${req.origin}`);
         return;
     }
 
     //コネクション確立とイベントハンドラ
-    const connection = request.accept(PROTOCOL, request.origin);
+    const connection = req.accept(PROTOCOL, req.origin);
     onAccept(connection);
     connection.on('message', message => {
         switch (message.type) {

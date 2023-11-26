@@ -1,3 +1,5 @@
+# GCP の node-test-run プロジェクトは shutdown しました。2023/11/26
+
 # node-test-run
 
 + Googleでログイン、ブラウザからカメラやGPSなどを使うテスト

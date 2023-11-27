@@ -1,4 +1,4 @@
-**⛔ GCP の node-test-run プロジェクトは shutdown しました。2023/11/26**
+**⛔ GCP の認証用プロジェクト node-test-run は shutdown しました。2023/11/26**
 
 # node-test-run
 
